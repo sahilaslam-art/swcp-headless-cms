@@ -1,0 +1,230 @@
+@import "tailwindcss";
+
+:root {
+  --bg-base: #FAF7F2;
+  --bg-surface: #F5EDE4;
+  --bg-card: #FEFBF7;
+  --text-primary: #3D3A34;
+  --text-secondary: #8B8680;
+  --accent: #D4754C;
+  --border-subtle: #E8DDD1;
+}
+
+body {
+  font-family: 'Satoshi', sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+/* Noise Overlay */
+.noise-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  opacity: 0.12;
+  background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+  z-index: 9999;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 10px;
+}
+
+/* Card Hover Effect */
+.card-hover {
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px -5px rgba(61, 58, 52, 0.05);
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 30px -10px rgba(212, 117, 76, 0.15);
+}
+
+/* Card Shadow */
+.card-shadow {
+  box-shadow: 0 4px 20px -5px rgba(61, 58, 52, 0.05);
+}
+
+/* Card Stat */
+.card-stat {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.3s ease;
+}
+.card-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -10px rgba(61, 58, 52, 0.1);
+}
+
+/* Chart Animation */
+.chart-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: dash 3s ease-in-out forwards;
+}
+.chart-animate {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: dash 3s ease-in-out forwards;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Filter Tab Active */
+.filter-tab-active {
+  background-color: var(--bg-card);
+  color: var(--accent);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* Tab Active */
+.tab-active {
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Rating Button Active */
+.rating-btn-active {
+  background-color: var(--accent);
+  color: white !important;
+  border-color: var(--accent);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  width: 36px;
+  height: 18px;
+  background-color: var(--border-subtle);
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.toggle-switch.active {
+  background-color: var(--accent);
+}
+.toggle-switch-handle {
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s;
+}
+.toggle-switch.active .toggle-switch-handle {
+  transform: translateX(18px);
+}
+
+/* Toggle Active */
+.toggle-active {
+  background-color: var(--accent);
+}
+.toggle-knob {
+  transition: transform 0.2s ease;
+}
+.toggle-active .toggle-knob {
+  transform: translateX(20px);
+}
+
+/* Device Tab Active */
+.device-tab-active {
+  background-color: var(--bg-card);
+  color: var(--accent);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Input Fields */
+.input-field {
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(212, 117, 76, 0.1);
+}
+
+.input-warm {
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+.input-warm:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(212, 117, 76, 0.1);
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--accent);
+  color: white;
+  transition: all 0.3s ease;
+}
+.btn-primary:hover {
+  background-color: #c26742;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 117, 76, 0.2);
+}
+
+.btn-secondary {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+.btn-secondary:hover {
+  background-color: var(--bg-surface);
+  border-color: var(--accent);
+}
+
+/* Preview Browser */
+.preview-browser {
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 10px 40px -10px rgba(61, 58, 52, 0.1);
+  height: 100%;
+  overflow: hidden;
+}
+
+/* SEO Ring */
+.seo-ring {
+  position: relative;
+  width: 42px;
+  height: 42px;
+}
+.seo-ring svg {
+  transform: rotate(-90deg);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  background-color: rgba(61, 58, 52, 0.4);
+  backdrop-filter: blur(4px);
+}
