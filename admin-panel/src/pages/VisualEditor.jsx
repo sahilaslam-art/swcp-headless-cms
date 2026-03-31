@@ -13,6 +13,7 @@ export default function VisualEditor() {
   const [editedValues, setEditedValues] = useState({});
   const [previewMode, setPreviewMode] = useState('desktop'); // 'desktop' or 'mobile'
   const [expandedSections, setExpandedSections] = useState({});
+  const [interactionMode, setInteractionMode] = useState('select'); // 'navigate' or 'select'
   const iframeRef = useRef(null);
   const navigate = useNavigate();
 
@@ -43,10 +44,39 @@ export default function VisualEditor() {
       const data = event.data;
       
       if (data.type === 'DOM_SCANNED') {
+        console.log("[Admin Panel] Received fresh DOM scan:", data.elements.length, "elements");
         setScannedElements(data.elements);
-        // We deliberately do not reset `setExpandedSections` here.
-        // Because `expandedSections` defaults to {}, all sections start CLOSED.
-        // Not modifying it preserves whatever the user has manually opened across background rescans.
+      }
+
+      if (data.type === 'ELEMENT_CLICKED') {
+        console.log("[Admin Panel] Element clicked in preview:", data.cmsId, data.selector);
+        setScannedElements(prevElements => {
+          // Try to find by cmsId first (precise), then by selector (fallback)
+          const clickedEl = prevElements.find(el => (data.cmsId && el.cmsId === data.cmsId) || el.selector === data.selector);
+          
+          if (clickedEl) {
+            const section = clickedEl.section || 'General Content';
+            console.log("[Admin Panel] Opening section:", section);
+            setExpandedSections(prev => ({ ...prev, [section]: true }));
+            
+            setTimeout(() => {
+              const elementIdIdentifier = clickedEl.cmsId || btoa(clickedEl.selector).replace(/=/g, '');
+              const id = `input-${elementIdIdentifier}`;
+              const inputNode = document.getElementById(id);
+              if (inputNode) {
+                inputNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                inputNode.focus();
+                inputNode.parentElement.style.boxShadow = '0 0 0 2px #C5916E';
+                setTimeout(() => { if(inputNode.parentElement) inputNode.parentElement.style.boxShadow = ''; }, 1500);
+              } else {
+                console.warn("[Admin Panel] Could not find input field with ID:", id);
+              }
+            }, 150);
+          } else {
+            console.warn("[Admin Panel] Clicked element not found in current scanned list. Try 'Force Rescan'.");
+          }
+          return prevElements;
+        });
       }
     };
 
@@ -55,13 +85,28 @@ export default function VisualEditor() {
   }, []);
 
   const handleIframeLoad = () => {
-    if (iframeRef.current && config?.contentEdits) {
+    if (iframeRef.current) {
+      if (config?.contentEdits) {
+        iframeRef.current.contentWindow.postMessage({
+          type: 'LOAD_DRAFTS',
+          edits: config.contentEdits
+        }, "*");
+      }
       iframeRef.current.contentWindow.postMessage({
-        type: 'LOAD_DRAFTS',
-        edits: config.contentEdits
+        type: 'SET_INTERACTION_MODE',
+        mode: interactionMode
       }, "*");
     }
   };
+
+  useEffect(() => {
+    if (iframeRef.current) {
+      iframeRef.current.contentWindow.postMessage({
+        type: 'SET_INTERACTION_MODE',
+        mode: interactionMode
+      }, "*");
+    }
+  }, [interactionMode]);
 
   // When a user types into the left sidebar form
   const handleInputChange = (selector, newValue) => {
@@ -206,18 +251,20 @@ export default function VisualEditor() {
                               <div className="space-y-3">
                                 <img src={currentVal} alt="Preview" className="w-full h-24 object-cover rounded-lg border border-[#E8DDD1]" />
                                 <input 
+                                  id={`input-${el.cmsId || btoa(el.selector).replace(/=/g, '')}`}
                                   type="url"
                                   value={currentVal}
                                   onChange={(e) => handleInputChange(el.selector, e.target.value)}
-                                  className="w-full bg-white border border-[#E8DDD1] rounded-lg px-3 py-2 text-xs text-[#3D3A34] outline-none"
+                                  className="w-full bg-white border border-[#E8DDD1] rounded-lg px-3 py-2 text-xs text-[#3D3A34] outline-none transition-all duration-300"
                                   placeholder="Paste image URL here"
                                 />
                               </div>
                             ) : (
                               <textarea
+                                id={`input-${el.cmsId || btoa(el.selector).replace(/=/g, '')}`}
                                 value={currentVal}
                                 onChange={(e) => handleInputChange(el.selector, e.target.value)}
-                                className={`w-full bg-transparent resize-none outline-none text-[#3D3A34] ${isHeading ? 'text-lg font-bold' : 'text-sm'} leading-relaxed min-h-[60px]`}
+                                className={`w-full bg-transparent resize-none outline-none text-[#3D3A34] ${isHeading ? 'text-lg font-bold' : 'text-sm'} leading-relaxed min-h-[60px] transition-all duration-300`}
                                 placeholder="Enter text..."
                               />
                             )}
@@ -236,19 +283,37 @@ export default function VisualEditor() {
         <div className="flex-1 bg-[#F5EDE4]/50 p-6 flex flex-col relative overflow-hidden hidden-scrollbar">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-[#3D3A34]">Live Preview</h3>
-            <div className="flex gap-2 bg-[#E8DDD1]/50 p-1 rounded-lg">
-              <button 
-                onClick={() => setPreviewMode('desktop')}
-                className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors ${previewMode === 'desktop' ? 'bg-white shadow-sm text-[#D4754C]' : 'text-[#8B8680] hover:text-[#3D3A34]'}`}
-              >
-                <Icon icon="lucide:monitor" className="text-sm" />
-              </button>
-              <button 
-                onClick={() => setPreviewMode('mobile')}
-                className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors ${previewMode === 'mobile' ? 'bg-white shadow-sm text-[#D4754C]' : 'text-[#8B8680] hover:text-[#3D3A34]'}`}
-              >
-                <Icon icon="lucide:smartphone" className="text-sm" />
-              </button>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex bg-[#E8DDD1]/50 p-1 rounded-lg">
+                 <button 
+                  onClick={() => setInteractionMode('navigate')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${interactionMode === 'navigate' ? 'bg-white shadow-sm text-[#D4754C]' : 'text-[#8B8680] hover:text-[#3D3A34]'}`}
+                 >
+                   <Icon icon="lucide:pointer" className="inline mr-1" /> Browse
+                 </button>
+                 <button 
+                  onClick={() => setInteractionMode('select')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${interactionMode === 'select' ? 'bg-white shadow-sm text-[#D4754C]' : 'text-[#8B8680] hover:text-[#3D3A34]'}`}
+                 >
+                   <Icon icon="lucide:mouse-pointer-click" className="inline mr-1" /> Edit
+                 </button>
+              </div>
+
+              <div className="flex gap-2 bg-[#E8DDD1]/50 p-1 rounded-lg">
+                <button 
+                  onClick={() => setPreviewMode('desktop')}
+                  className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors ${previewMode === 'desktop' ? 'bg-white shadow-sm text-[#D4754C]' : 'text-[#8B8680] hover:text-[#3D3A34]'}`}
+                >
+                  <Icon icon="lucide:monitor" className="text-sm" />
+                </button>
+                <button 
+                  onClick={() => setPreviewMode('mobile')}
+                  className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors ${previewMode === 'mobile' ? 'bg-white shadow-sm text-[#D4754C]' : 'text-[#8B8680] hover:text-[#3D3A34]'}`}
+                >
+                  <Icon icon="lucide:smartphone" className="text-sm" />
+                </button>
+              </div>
             </div>
           </div>
           
