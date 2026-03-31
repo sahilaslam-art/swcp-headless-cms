@@ -58,10 +58,12 @@ const Login = () => {
         return
       }
 
-      await login(formData.email.trim(), formData.password, true)
+      const response = await login(formData.email.trim(), formData.password, true)
 
-      const from = location.state?.from?.pathname || '/'
-      navigate(from, { replace: true })
+      if (response.success) {
+        const from = location.state?.from?.pathname || '/'
+        navigate(from, { replace: true })
+      }
     } catch (err) {
       console.error('Login error:', err)
       toast.showError(err.response?.data?.message || err.message || 'An unexpected error occurred.')

@@ -60,13 +60,15 @@ const Register = () => {
         return
       }
 
-      await register(
+      const response = await register(
         formData.email.trim(),
         formData.username.trim(),
         formData.password
       )
 
-      navigate('/login', { replace: true, state: { successMessage: 'Successfully signed up! Please login.' } })
+      if (response.success) {
+        navigate('/login', { replace: true, state: { successMessage: 'Successfully signed up! Please login.' } })
+      }
     } catch (err) {
       console.error('Registration error:', err)
       toast.showError(err.response?.data?.message || err.message || 'An unexpected error occurred.')

@@ -36,6 +36,48 @@
     return path.join(" > ");
   }
 
+  function formatSectionName(str) {
+    let result = str.replace(/[-_]/g, ' ');
+    result = result.replace(/([A-Z])/g, ' $1');
+    result = result.trim().toLowerCase();
+    result = result.replace(/\b\w/g, c => c.toUpperCase());
+    return result + (result.toLowerCase().includes('section') ? '' : ' Section');
+  }
+
+  function determineSectionName(el) {
+    let curr = el.parentElement;
+    let fallback = 'General Content';
+    while (curr && curr !== document.body && curr !== document.documentElement) {
+      const tagName = curr.tagName.toLowerCase();
+      if (tagName === 'nav') return 'Navigation Bar';
+      if (tagName === 'header') return 'Header Section';
+      if (tagName === 'footer') return 'Footer Section';
+      if (tagName === 'main') fallback = 'Main Content';
+      
+      if (curr.id) return formatSectionName(curr.id);
+      
+      if (curr.className && typeof curr.className === 'string') {
+        const classes = curr.className.toLowerCase();
+        if (classes.includes('nav')) return 'Navigation Bar';
+        if (classes.includes('hero')) return 'Hero Section';
+        if (classes.includes('about')) return 'About Section';
+        if (classes.includes('contact')) return 'Contact Section';
+        if (classes.includes('faq')) return 'FAQ Section';
+        if (classes.includes('testimonial')) return 'Testimonials';
+        if (classes.includes('team')) return 'Team Section';
+        if (classes.includes('pricing')) return 'Pricing Section';
+        if (classes.includes('service')) return 'Services Section';
+        if (classes.includes('portfolio') || classes.includes('project')) return 'Portfolio Section';
+        if (tagName === 'section') {
+           const firstClass = curr.className.split(' ')[0];
+           if (firstClass && firstClass.length > 2) return formatSectionName(firstClass);
+        }
+      }
+      curr = curr.parentElement;
+    }
+    return fallback;
+  }
+
   // Parses the entire document to detect what can be edited
   function scanAndReportDOM() {
     const elements = [];
@@ -52,7 +94,8 @@
           selector: getCssSelector(el),
           type: 'text',
           tag: el.tagName.toLowerCase(),
-          value: el.innerHTML
+          value: el.innerHTML,
+          section: determineSectionName(el)
         });
       }
     });
@@ -62,7 +105,8 @@
         selector: getCssSelector(img),
         type: 'image',
         tag: 'img',
-        value: img.src
+        value: img.src,
+        section: determineSectionName(img)
       });
     });
 
@@ -74,10 +118,13 @@
     console.log("[Visual CMS SDK] Edit Mode Initialized");
 
     window.addEventListener('message', (event) => {
-      if (event.data?.type === 'LOAD_DRAFTS' && event.data.edits) {
-        applyEdits(event.data.edits);
-        // Rescan after applying initial drafts because values changed
-        setTimeout(scanAndReportDOM, 500);
+      if (event.data?.type === 'LOAD_DRAFTS') {
+        if (event.data.edits) {
+          applyEdits(event.data.edits);
+        }
+        if (event.data.forceRescan) {
+          scanAndReportDOM();
+        }
       }
       
       // Receive live stroke-by-stroke updates from the left panel forms
@@ -97,13 +144,42 @@
       }
     });
 
-    const observer = new MutationObserver(debounce(() => {
-        // scanAndReportDOM(); // Re-scan on major DOM changes if needed
-    }, 2000));
-    observer.observe(document.body, { childList: true, subtree: true });
+    // SPA Routing Detection (Monkey-patch History API)
+    const originalPushState = history.pushState;
+    history.pushState = function() {
+      originalPushState.apply(this, arguments);
+      debounceScan();
+    };
+    
+    const originalReplaceState = history.replaceState;
+    history.replaceState = function() {
+      originalReplaceState.apply(this, arguments);
+      debounceScan();
+    };
+    
+    window.addEventListener('popstate', debounceScan);
+    window.addEventListener('hashchange', debounceScan);
 
-    // Initial scan
-    setTimeout(scanAndReportDOM, 1000);
+    // Observe DOM changes (React renders asynchronously)
+    const debounceScan = debounce(() => {
+      console.log("[Visual CMS SDK] Triggering scan due to DOM or Route change");
+      scanAndReportDOM();
+      // Also re-apply any saved edits from DB just in case a component re-rendered
+      if (window._cmsEditsCache) applyEdits(window._cmsEditsCache);
+    }, 600);
+
+    const observer = new MutationObserver(debounceScan);
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+
+    // Initial scan loop (waits for framework to insert content)
+    let attempts = 0;
+    const initialScan = setInterval(() => {
+      scanAndReportDOM();
+      attempts++;
+      if (document.querySelectorAll('h1, h2, p, img').length > 0 || attempts > 10) {
+        clearInterval(initialScan);
+      }
+    }, 500);
 
   } else {
     console.log("[Visual CMS SDK] View Mode Initialized");
@@ -120,6 +196,7 @@
   }
 
   function applyEdits(edits) {
+    window._cmsEditsCache = edits; // Cache for re-applying on route changes
     Object.keys(edits).forEach(selector => {
       const el = document.querySelector(selector);
       if (el) {

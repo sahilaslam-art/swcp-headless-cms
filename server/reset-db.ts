@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv";
+import * as dotenv from "dotenv";
 
 dotenv.config();
 
@@ -9,8 +9,10 @@ const resetDb = async () => {
     await mongoose.connect(mongoUri);
     console.log("Connected to MongoDB.");
     
-    await mongoose.connection.db.dropDatabase();
-    console.log("Database successfully dropped!");
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.dropDatabase();
+      console.log("Database successfully dropped!");
+    }
     
     process.exit(0);
   } catch (error) {

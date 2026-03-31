@@ -12,6 +12,7 @@ export default function VisualEditor() {
   const [scannedElements, setScannedElements] = useState([]);
   const [editedValues, setEditedValues] = useState({});
   const [previewMode, setPreviewMode] = useState('desktop'); // 'desktop' or 'mobile'
+  const [expandedSections, setExpandedSections] = useState({});
   const iframeRef = useRef(null);
   const navigate = useNavigate();
 
@@ -42,8 +43,10 @@ export default function VisualEditor() {
       const data = event.data;
       
       if (data.type === 'DOM_SCANNED') {
-        // Group and format elements identified in the external site
         setScannedElements(data.elements);
+        // We deliberately do not reset `setExpandedSections` here.
+        // Because `expandedSections` defaults to {}, all sections start CLOSED.
+        // Not modifying it preserves whatever the user has manually opened across background rescans.
       }
     };
 
@@ -94,6 +97,17 @@ export default function VisualEditor() {
     }, 1000); // 1-second debounce before hitting DB
   };
 
+  const toggleSection = (sectionName) => {
+    setExpandedSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
+  };
+
+  const groupedElements = scannedElements.reduce((acc, el) => {
+    const sec = el.section || 'General Content';
+    if (!acc[sec]) acc[sec] = [];
+    acc[sec].push(el);
+    return acc;
+  }, {});
+
   if (loading) return null;
 
   return (
@@ -108,6 +122,19 @@ export default function VisualEditor() {
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#8B8680]">Live Connection</span>
           </div>
           <span className="text-sm font-medium text-[#3D3A34]">{config.domain}</span>
+          
+          <button 
+            onClick={() => {
+              if (iframeRef.current) {
+                iframeRef.current.contentWindow.postMessage({ type: 'LOAD_DRAFTS', forceRescan: true }, "*");
+                toast.showInfo("Scanning for new elements...");
+              }
+            }}
+            className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-[#8B8680] hover:text-[#D4754C] transition-colors ml-4"
+          >
+            <Icon icon="lucide:refresh-cw" className="text-sm" />
+            Force Rescan
+          </button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -138,45 +165,69 @@ export default function VisualEditor() {
                 <p className="text-sm">Scanning your website layout...</p>
               </div>
             ) : (
-              scannedElements.map((el, index) => {
-                const isHeading = ['h1', 'h2', 'h3'].includes(el.tag);
-                const isImg = el.tag === 'img';
-                const currentVal = editedValues[el.selector] !== undefined ? editedValues[el.selector] : el.value;
-
-                return (
-                  <div key={index} className="bg-[#FEFBF7] border border-[#E8DDD1] p-4 rounded-xl shadow-sm transition-all focus-within:border-[#D4754C] focus-within:ring-1 focus-within:ring-[#D4754C]">
-                    <div className="flex justify-between items-center mb-3">
-                      <label className="text-[10px] font-bold text-[#3D3A34] uppercase tracking-widest flex items-center gap-2">
-                        <Icon icon={isImg ? "lucide:image" : (isHeading ? "lucide:heading" : "lucide:type")} className="text-[#D4754C]" />
-                        {el.tag} Block
-                      </label>
-                      <span className="text-[9px] text-[#8B8680] font-mono truncate max-w-[120px]" title={el.selector}>
-                        {el.selector.split('>').pop().trim()}
-                      </span>
-                    </div>
-                    
-                    {isImg ? (
-                      <div className="space-y-3">
-                        <img src={currentVal} alt="Preview" className="w-full h-24 object-cover rounded-lg border border-[#E8DDD1]" />
-                        <input 
-                          type="url"
-                          value={currentVal}
-                          onChange={(e) => handleInputChange(el.selector, e.target.value)}
-                          className="w-full bg-white border border-[#E8DDD1] rounded-lg px-3 py-2 text-xs text-[#3D3A34] outline-none"
-                          placeholder="Paste image URL here"
-                        />
-                      </div>
-                    ) : (
-                      <textarea
-                        value={currentVal}
-                        onChange={(e) => handleInputChange(el.selector, e.target.value)}
-                        className={`w-full bg-transparent resize-none outline-none text-[#3D3A34] ${isHeading ? 'text-lg font-bold' : 'text-sm'} leading-relaxed min-h-[60px]`}
-                        placeholder="Enter text..."
-                      />
-                    )}
+              Object.keys(groupedElements).map((sectionName) => (
+                <div key={sectionName} className="mb-6 animate-fade-in">
+                  {/* Accordion Header */}
+                  <div 
+                    onClick={() => toggleSection(sectionName)}
+                    className="flex justify-between items-center bg-[#F5EDE4] border border-[#E8DDD1] p-3 rounded-lg cursor-pointer hover:bg-[#E8DDD1]/80 transition-colors mb-4"
+                  >
+                    <h3 className="text-xs font-bold text-[#3D3A34] uppercase tracking-wider flex items-center gap-2">
+                       <Icon icon="lucide:layout" className="text-[#D4754C] text-sm" />
+                       {sectionName}
+                    </h3>
+                    <Icon 
+                      icon={expandedSections[sectionName] ? "lucide:chevron-up" : "lucide:chevron-down"} 
+                      className="text-[#8B8680]" 
+                    />
                   </div>
-                );
-              })
+
+                  {/* Accordion Content */}
+                  {expandedSections[sectionName] && (
+                    <div className="space-y-4 pl-1 border-l-2 border-[#E8DDD1]/50 ml-3">
+                      {groupedElements[sectionName].map((el) => {
+                        const isHeading = ['h1', 'h2', 'h3'].includes(el.tag);
+                        const isImg = el.tag === 'img';
+                        const currentVal = editedValues[el.selector] !== undefined ? editedValues[el.selector] : el.value;
+
+                        return (
+                          <div key={el.selector} className="bg-[#FEFBF7] border border-[#E8DDD1] p-4 rounded-xl shadow-sm transition-all focus-within:border-[#D4754C] focus-within:ring-1 focus-within:ring-[#D4754C]">
+                            <div className="flex justify-between items-center mb-3">
+                              <label className="text-[10px] font-bold text-[#3D3A34] uppercase tracking-widest flex items-center gap-2">
+                                <Icon icon={isImg ? "lucide:image" : (isHeading ? "lucide:heading" : "lucide:type")} className="text-[#D4754C]" />
+                                {el.tag} Block
+                              </label>
+                              <span className="text-[9px] text-[#8B8680] font-mono truncate max-w-[120px]" title={el.selector}>
+                                {el.selector.split('>').pop().trim()}
+                              </span>
+                            </div>
+                            
+                            {isImg ? (
+                              <div className="space-y-3">
+                                <img src={currentVal} alt="Preview" className="w-full h-24 object-cover rounded-lg border border-[#E8DDD1]" />
+                                <input 
+                                  type="url"
+                                  value={currentVal}
+                                  onChange={(e) => handleInputChange(el.selector, e.target.value)}
+                                  className="w-full bg-white border border-[#E8DDD1] rounded-lg px-3 py-2 text-xs text-[#3D3A34] outline-none"
+                                  placeholder="Paste image URL here"
+                                />
+                              </div>
+                            ) : (
+                              <textarea
+                                value={currentVal}
+                                onChange={(e) => handleInputChange(el.selector, e.target.value)}
+                                className={`w-full bg-transparent resize-none outline-none text-[#3D3A34] ${isHeading ? 'text-lg font-bold' : 'text-sm'} leading-relaxed min-h-[60px]`}
+                                placeholder="Enter text..."
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))
             )}
           </div>
         </div>
