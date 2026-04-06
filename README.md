@@ -59,6 +59,32 @@ npm run dev
 
 ---
 
+## 🚀 Deployment (Live Ready)
+
+This project is configured for seamless deployment on **Vercel** (Frontend) and **Railway** (Backend).
+
+### 1. Backend (Railway)
+1. **Connect Repo**: Login to [Railway](https://railway.app) and link this repository.
+2. **Environment Variables**: Add the following in the Railway dashboard:
+   - `PORT`: `5000`
+   - `MONGODB_URI`: Your MongoDB Atlas URI.
+   - `JWT_SECRET`: A strong random string.
+   - `ALLOWED_ORIGINS`: `https://your-app.vercel.app` (your frontend URL).
+   - `BACKEND_URL`: `https://your-api.up.railway.app` (your Railway public URL).
+   - `NODE_ENV`: `production`
+3. **Build Command**: `npm run build`
+4. **Start Command**: `npm start`
+
+### 2. Frontend (Vercel)
+1. **Connect Repo**: Login to [Vercel](https://vercel.com) and link this repository.
+2. **Root Directory**: Set to `admin-panel`.
+3. **Environment Variables**:
+   - `VITE_API_URL`: `https://your-api.up.railway.app/api` (your backend Railway URL + `/api`).
+4. **Build Command**: `npm run build`
+5. **Framework Preset**: `Vite`
+
+---
+
 ## 🎨 How to Use the Visual CMS (Integration Guide)
 
 1. **Register & Login**: Create a new account on the dashboard.

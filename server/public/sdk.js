@@ -11,7 +11,7 @@
     }
   }
 
-  const API_BASE = "http://localhost:5000/api/public"; 
+  const API_BASE = "__API_BASE_URL__" || "http://localhost:5000/api/public"; 
 
   function getCssSelector(el) {
     if (!(el instanceof Element)) return;
