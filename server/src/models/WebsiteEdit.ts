@@ -17,6 +17,17 @@ const websiteEditSchema = new mongoose.Schema(
       of: String,
       default: {},
     },
+    draftEdits: {
+      type: Map,
+      of: String,
+      default: {},
+    },
+    history: [
+      {
+        savedAt: { type: Date, default: Date.now },
+        snapshot: { type: Map, of: String, default: {} },
+      }
+    ],
     isLive: {
       type: Boolean,
       default: true,

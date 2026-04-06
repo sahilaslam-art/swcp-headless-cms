@@ -3,21 +3,28 @@ import { Icon } from '@iconify/react';
 import { Link } from 'react-router-dom';
 import TopNavbar from '../components/TopNavbar';
 import Footer from '../components/Footer';
-import { fetchStats, fetchMessages, fetchFeedback } from '../services/api';
+import { fetchStats, fetchMessages, fetchFeedback, fetchAnalyticsStats } from '../services/api';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({ totalProjects: 0, totalMessages: 0, totalFeedback: 0, approvedFeedback: 0, pendingFeedback: 0 });
   const [recentMessages, setRecentMessages] = useState([]);
   const [recentFeedback, setRecentFeedback] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, m, f] = await Promise.all([fetchStats(), fetchMessages(), fetchFeedback()]);
+        const [s, m, f, a] = await Promise.all([
+          fetchStats(), 
+          fetchMessages(), 
+          fetchFeedback(),
+          fetchAnalyticsStats()
+        ]);
         setStats(s);
         setRecentMessages(m.slice(0, 4));
         setRecentFeedback(f.filter((fb) => !fb.approved).slice(0, 3));
+        setAnalytics(a);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
@@ -46,6 +53,46 @@ export default function DashboardPage() {
               <h3 className="text-3xl font-bold text-[#3D3A34]">{loading ? '—' : card.value}</h3>
             </Link>
           ))}
+        </div>
+
+        {/* Analytics & SDK Status */}
+        <div className="bg-[#FEFBF7] border border-[#E8DDD1] rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h4 className="text-lg font-bold flex items-center gap-2">
+                <Icon icon="lucide:bar-chart-3" className="text-[#D4754C]" />
+                Website Performance
+              </h4>
+              <p className="text-xs text-[#8B8680] mt-1">Real-time stats from your connected website</p>
+            </div>
+            {analytics?.sdkActive && (
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-bold uppercase tracking-wider border border-green-100">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                SDK Active: {analytics.domain}
+              </span>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="p-4 bg-[#F5EDE4]/40 rounded-xl border border-[#E8DDD1]">
+              <p className="text-[10px] font-bold text-[#8B8680] uppercase mb-1">Total Page Views</p>
+              <h5 className="text-2xl font-bold text-[#3D3A34]">{loading ? '...' : (analytics?.pageViews || 0)}</h5>
+            </div>
+            <div className="p-4 bg-[#F5EDE4]/40 rounded-xl border border-[#E8DDD1]">
+              <p className="text-[10px] font-bold text-[#8B8680] uppercase mb-1">Live Edits</p>
+              <h5 className="text-2xl font-bold text-[#3D3A34]">{loading ? '...' : (analytics?.editCount || 0)}</h5>
+            </div>
+            <div className="p-4 bg-[#F5EDE4]/40 rounded-xl border border-[#E8DDD1]">
+              <p className="text-[10px] font-bold text-[#8B8680] uppercase mb-1">Pending Drafts</p>
+              <h5 className="text-2xl font-bold text-[#3D3A34]">{loading ? '...' : (analytics?.draftCount || 0)}</h5>
+            </div>
+            <div className="p-4 bg-[#F5EDE4]/40 rounded-xl border border-[#E8DDD1]">
+              <p className="text-[10px] font-bold text-[#8B8680] uppercase mb-1">Last SDK Check</p>
+              <h5 className="text-sm font-bold text-[#3D3A34] mt-2">
+                {loading || !analytics?.lastVisit ? 'Never' : new Date(analytics.lastVisit).toLocaleDateString()}
+              </h5>
+            </div>
+          </div>
         </div>
 
         {/* Recent Section */}

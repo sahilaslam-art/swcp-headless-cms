@@ -128,3 +128,8 @@ export async function fetchStats() {
   const res = await api.get(`/admin/stats`);
   return res.data;
 }
+// ==================== ANALYTICS ====================
+export async function fetchAnalyticsStats() {
+  const res = await api.get(`/analytics/stats`);
+  return res.data;
+}

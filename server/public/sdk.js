@@ -103,14 +103,22 @@
         const cid = `cms-node-${nodeCounter++}`;
         el.dataset.cmsScanned = 'true';
         el.dataset.cmsId = cid;
-        elements.push({
+        
+        const payload = {
           cmsId: cid,
           selector: getCssSelector(el),
           type: 'text',
           tag: el.tagName.toLowerCase(),
           value: el.innerHTML,
           section: determineSectionName(el)
-        });
+        };
+
+        // Capture href for links
+        if (el.tagName.toLowerCase() === 'a') {
+          payload.href = el.getAttribute('href');
+        }
+
+        elements.push(payload);
       }
     });
 
@@ -179,13 +187,37 @@
       
       // Receive live stroke-by-stroke updates from the left panel forms
       if (event.data?.type === 'LIVE_UPDATE') {
-        const el = document.querySelector(event.data.selector);
+        const fullSelector = event.data.selector;
+        const isHref = fullSelector.endsWith('##href');
+        const isStyle = fullSelector.includes('##style:');
+        const selector = isHref
+          ? fullSelector.replace('##href', '')
+          : isStyle
+          ? fullSelector.split('##style:')[0]
+          : fullSelector;
+        
+        const el = document.querySelector(selector);
         if (el) {
-          if (el.tagName === 'IMG') {
-            el.src = event.data.value;
+          // FIX 1: Set flag BEFORE mutating DOM so MutationObserver ignores this change
+          window._cmsUpdating = true;
+          clearTimeout(window._cmsUpdatingTimer);
+
+          if (isHref) {
+            el.setAttribute('href', event.data.value);
+          } else if (isStyle) {
+            const styleProp = fullSelector.split('##style:')[1];
+            el.style[styleProp] = event.data.value;
+          } else if (el.tagName === 'IMG') {
+            // FIX 2: Only update src when value is non-empty to avoid broken image
+            if (event.data.value) el.src = event.data.value;
           } else {
-            el.innerHTML = event.data.value;
+            // FIX 2: Only update innerHTML when value is non-empty to avoid invisible element
+            if (event.data.value !== undefined) el.innerHTML = event.data.value;
           }
+
+          // Clear the flag after a safe delay (longer than observer debounce)
+          window._cmsUpdatingTimer = setTimeout(() => { window._cmsUpdating = false; }, 800);
+
           // Highlight it temporarily to show what's updating
           const originalOutline = el.style.outline;
           el.style.outline = '3px solid #D4754C';
@@ -236,11 +268,19 @@
     window.addEventListener('hashchange', immediateScan);
 
     const observer = new MutationObserver((mutations) => {
-        // Only trigger if real content changed, not just our highlights
-        const hasRealChange = mutations.some(m => 
-            m.target.dataset?.cmsScanned !== 'true' && 
-            m.target.id !== 'cms-highlighter'
-        );
+        // FIX 3: If we are in the middle of a CMS-driven update, ignore all mutations
+        if (window._cmsUpdating) return;
+
+        // Only trigger rescan for real external DOM changes, not CMS highlights or framework micro-updates
+        const hasRealChange = mutations.some(m => {
+            // Ignore mutations ON cms-scanned elements (those are our own edits)
+            if (m.target.dataset?.cmsScanned === 'true') return false;
+            // Ignore our highlight outline changes
+            if (m.target.id === 'cms-highlighter') return false;
+            // Ignore attribute mutations (style changes from highlights)
+            if (m.type === 'attributes') return false;
+            return true;
+        });
         if (hasRealChange) debounceScan();
     });
     observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: false });
@@ -248,6 +288,10 @@
   } else {
     console.log("[Visual CMS SDK] View Mode Initialized");
     if (userId) {
+      // Ping analytics
+      fetch(`${API_BASE.replace('/public', '/analytics')}/ping/${userId}`)
+        .catch(() => {});
+
       fetch(`${API_BASE}/edits/${userId}`)
         .then(res => res.json())
         .then(data => {
@@ -261,13 +305,30 @@
 
   function applyEdits(edits) {
     window._cmsEditsCache = edits; // Cache for re-applying on route changes
-    Object.keys(edits).forEach(selector => {
+    Object.keys(edits).forEach(fullSelector => {
+      const isHref = fullSelector.endsWith('##href');
+      const isStyle = fullSelector.includes('##style:');
+
+      // Resolve the real CSS selector (strip our suffixes)
+      const selector = isHref
+        ? fullSelector.replace('##href', '')
+        : isStyle
+        ? fullSelector.split('##style:')[0]
+        : fullSelector;
+
+      const value = edits[fullSelector];
       const el = document.querySelector(selector);
+
       if (el) {
-        if (el.tagName === 'IMG') {
-          el.src = edits[selector];
+        if (isHref) {
+          el.setAttribute('href', value);
+        } else if (isStyle) {
+          const styleProp = fullSelector.split('##style:')[1];
+          el.style[styleProp] = value;
+        } else if (el.tagName === 'IMG') {
+          if (value) el.src = value; // guard: skip empty src
         } else {
-          el.innerHTML = edits[selector];
+          if (value !== undefined) el.innerHTML = value; // guard: skip undefined
         }
       }
     });

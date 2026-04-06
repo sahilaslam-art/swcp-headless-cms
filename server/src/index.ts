@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import visualEditorRoutes from "./routes/visualEditor.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -44,6 +45,7 @@ app.use("/api/auth", authRoutes);
 // Admin routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/visual-editor", visualEditorRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Public Headless CMS routes
 app.use("/api/public", publicRoutes);
