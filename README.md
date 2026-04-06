@@ -9,6 +9,7 @@ A powerful, multi-tenant SaaS application that allows users to perform **in-plac
 - **Auto-Scanning SDK (`sdk.js`)**: A lightweight, standalone script that users embed into their website. It recursively scans the DOM, maps text and images to unique CSS selectors, and broadcasts the layout back to the dashboard.
 - **Split-Pane Visual Editor**: The dashboard generates smart `<form>` inputs on the left panel for every editable block found on the user's website, rendering the live site via an `<iframe>` on the right.
 - **Bi-Directional Sync**: Editing forms in the dashboard triggers an instant `postMessage` event that visually updates the live iframe preview—giving a true "WYSIWYG" (What You See Is What You Get) feel.
+- **Real-Time Analytics**: Tracking page views, last visitor activity, and edit statistics (live vs. draft) across all managed domains.
 - **Multi-Tenant Architecture**: Robust `req.userId` filtering at the MongoDB/Mongoose layer ensures absolute data isolation between different registered users.
 - **Responsive Previews**: Within the editor, toggle instantly between Desktop (`100%`) and Mobile (`375px`) viewport containers to verify styles on the fly.
 - **Real-Time Auto-Save**: Dashboard edits are automatically debounced and persisted to the backend MongoDB `WebsiteEdit` collection.
@@ -18,6 +19,7 @@ A powerful, multi-tenant SaaS application that allows users to perform **in-plac
 - **Backend**: Node.js, Express.js.
 - **Database**: MongoDB, Mongoose.
 - **Authentication**: JWT (JSON Web Tokens) via `httpOnly` secure cookies.
+- **Tracking & Analytics**: Custom ping-based tracking via `Analytics` model.
 - **External Scripting**: Vanilla JavaScript APIs, `window.postMessage`, `MutationObserver`.
 
 ---
@@ -78,15 +80,15 @@ npm run dev
 │   ├── src/
 │   │   ├── components/      # Sidebar, Topbars, Layout Elements
 │   │   ├── context/         # AuthContext
-│   │   ├── pages/           # VisualEditor, IntegrationSetup, Dashboard, etc.
+│   │   ├── pages/           # VisualEditor, IntegrationDashboard, AnalyticsView
 │   │   └── services/        # Axios API configurations
 ├── server/                  # Node.js + Express Backend
 │   ├── public/              # Served statically (Contains `sdk.js`)
 │   ├── src/
 │   │   ├── controllers/     # Auth, Views, Editor logic
 │   │   ├── middleware/      # JWT verification, Error handling
-│   │   ├── models/          # User, WebsiteEdit, Contact
-│   │   └── routes/          # API definitions
+│   │   ├── models/          # User, WebsiteEdit, Analytics, Contact
+│   │   └── routes/          # API definitions (auth, edits, analytics)
 ├── index.html               # Dummy Local Testing Site
 └── package.json             # Root workspace package.json
 ```
