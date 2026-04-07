@@ -102,12 +102,12 @@ export default function VisualEditor() {
 
   const handleIframeLoad = () => {
     if (iframeRef.current) {
-      if (config?.contentEdits) {
-        iframeRef.current.contentWindow.postMessage({
-          type: 'LOAD_DRAFTS',
-          edits: config.contentEdits
-        }, "*");
-      }
+      // Always trigger initial scan + load drafts on iframe load
+      iframeRef.current.contentWindow.postMessage({
+        type: 'LOAD_DRAFTS',
+        edits: config?.contentEdits || {},
+        forceRescan: true
+      }, "*");
       iframeRef.current.contentWindow.postMessage({
         type: 'SET_INTERACTION_MODE',
         mode: interactionMode

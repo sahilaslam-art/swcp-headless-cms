@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 router.get('/sdk.js', (req, res) => {
   const sdkPath = path.join(__dirname, '../../public/sdk.js');
-  const backendUrl = process.env.BACKEND_URL || `http://${req.get('host')}`;
+  const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
   const apiBase = `${backendUrl}/api/public`;
 
   try {

@@ -40,9 +40,14 @@ export default function IntegrationSetup() {
     }
   };
 
+  const getBackendBase = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    return apiUrl.replace('/api', '');
+  };
+
   const copyScript = () => {
     if (!config?.user) return;
-    const scriptTag = `<script src="http://localhost:5000/sdk.js" data-user-id="${config.user}"></script>`;
+    const scriptTag = `<script src="${getBackendBase()}/sdk.js" data-user-id="${config.user}"></script>`;
     navigator.clipboard.writeText(scriptTag);
     toast.showSuccess("Code copied to clipboard!");
   };
@@ -93,7 +98,7 @@ export default function IntegrationSetup() {
             <h4 className="font-bold text-sm mb-4 uppercase tracking-widest text-[#8B8680]">Installation Script</h4>
             <div className="bg-[#2D2A26] p-6 rounded-xl relative group">
               <code className="text-[#E8DDD1] text-sm font-mono break-all">
-                &lt;script src="http://localhost:5000/sdk.js" data-user-id="{config.user}"&gt;&lt;/script&gt;
+                &lt;script src="{getBackendBase()}/sdk.js" data-user-id="{config.user}"&gt;&lt;/script&gt;
               </code>
               <button 
                 onClick={copyScript}
