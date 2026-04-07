@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../utils/tokenUtils';
-import User from '../models/User';
+import { verifyToken } from '../utils/tokenUtils.js';
+import User from '../models/User.js';
 
 export const verifyAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {

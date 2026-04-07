@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import User from '../models/User';
-import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/tokenUtils';
+import User from '../models/User.js';
+import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/tokenUtils.js';
 
 const cookieOptions = {
   httpOnly: true,
