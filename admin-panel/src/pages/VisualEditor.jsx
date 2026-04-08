@@ -11,6 +11,7 @@ export default function VisualEditor() {
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState('saved'); 
   const [scannedElements, setScannedElements] = useState([]);
+  const [hasScanned, setHasScanned] = useState(false);
   const [editedValues, setEditedValues] = useState({});
   const [previewMode, setPreviewMode] = useState('desktop'); // 'desktop' or 'mobile'
   const [expandedSections, setExpandedSections] = useState({});
@@ -54,6 +55,7 @@ export default function VisualEditor() {
           console.warn('[Admin Panel] Scan locked (user is typing), ignoring scan result.');
           return;
         }
+        setHasScanned(true);
         setScannedElements(prev => {
           if (prev.length > 5 && data.elements.length < prev.length * 0.5) {
             console.warn('[Admin Panel] Ignoring suspicious scan (too few elements, likely mid-render).');
@@ -264,10 +266,27 @@ export default function VisualEditor() {
           </div>
           
           <div className="flex-1 overflow-y-auto p-6 space-y-8 hidden-scrollbar">
-            {scannedElements.length === 0 ? (
+            {!hasScanned ? (
               <div className="text-center text-[#8B8680] mt-10">
-                <Icon icon="lucide:scan" className="text-3xl mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Scanning your website layout...</p>
+                <Icon icon="lucide:scan" className="text-3xl mx-auto mb-3 opacity-50 animate-pulse" />
+                <p className="text-sm animate-pulse">Scanning your website layout...</p>
+              </div>
+            ) : scannedElements.length === 0 ? (
+              <div className="text-center text-[#8B8680] mt-10 bg-[#F5EDE4]/50 border border-[#E8DDD1] p-6 rounded-2xl">
+                <Icon icon="lucide:file-question" className="text-4xl mx-auto mb-3 text-[#D4754C] opacity-70" />
+                <h3 className="text-md font-bold text-[#3D3A34] mb-1">No Editable Text Found</h3>
+                <p className="text-xs text-[#8B8680] max-w-[250px] mx-auto text-balance">
+                  We couldn't detect any standard text elements on the page. Ensure the SDK script is installed in the correct website.
+                </p>
+                <button 
+                  onClick={() => {
+                    setHasScanned(false);
+                    if (iframeRef.current) iframeRef.current.contentWindow.postMessage({ type: 'LOAD_DRAFTS', forceRescan: true }, "*");
+                  }}
+                  className="mt-4 bg-[#3D3A34] text-white px-4 py-2 rounded-lg text-xs font-bold"
+                >
+                  Try Again
+                </button>
               </div>
             ) : (
               Object.keys(groupedElements).map((sectionName) => (

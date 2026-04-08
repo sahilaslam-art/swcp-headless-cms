@@ -88,7 +88,7 @@
     const elements = [];
     nodeCounter = 0;
     // Expanded tags to catch more interaction elements
-    const textTags = "h1, h2, h3, h4, h5, h6, p, span, a, button, label, li, small";
+    const textTags = "div, section, h1, h2, h3, h4, h5, h6, p, span, a, button, label, li, small";
     
     document.querySelectorAll(textTags).forEach(el => {
       // Find elements that primarily contain text directly
@@ -97,6 +97,12 @@
       
       // Filter out massive containers or empty stuff
       if (text && text.length > 0 && text.length < 800) {
+        const isGenericContainer = ['div', 'section'].includes(el.tagName.toLowerCase());
+        const hasElementChildren = el.children.length > 0;
+
+        // If a div/section has element children, let the inner children be selected instead
+        if (isGenericContainer && hasElementChildren) return;
+
         // If it has too many children, it's likely a container, not the content node itself
         if (el.children.length > 2 && !['a', 'button', 'li'].includes(el.tagName.toLowerCase())) return;
 
