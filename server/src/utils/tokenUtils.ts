@@ -1,19 +1,21 @@
-import jwt, { Secret } from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET || 'fallback_secret';
+const getSecret = (): string => process.env.JWT_SECRET || 'fallback_secret';
 
-export const generateAccessToken = (userId: string) => {
-  return jwt.sign({ userId, type: 'access' }, JWT_SECRET, {
-    expiresIn: (process.env.JWT_ACCESS_EXPIRE || '15m') as any,
-  } as any);
+export const generateAccessToken = (userId: string): string => {
+  const options: SignOptions = {
+    expiresIn: (process.env.JWT_ACCESS_EXPIRE || '15m') as SignOptions['expiresIn'],
+  };
+  return jwt.sign({ userId, type: 'access' }, getSecret(), options);
 };
 
-export const generateRefreshToken = (userId: string, expiresIn: string = '7d') => {
-  return jwt.sign({ userId, type: 'refresh' }, JWT_SECRET, {
-    expiresIn: expiresIn as any,
-  } as any);
+export const generateRefreshToken = (
+  userId: string,
+  expiresIn: SignOptions['expiresIn'] = '7d'
+): string => {
+  return jwt.sign({ userId, type: 'refresh' }, getSecret(), { expiresIn });
 };
 
-export const verifyToken = (token: string) => {
-  return jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+export const verifyToken = (token: string): any => {
+  return jwt.verify(token, getSecret());
 };

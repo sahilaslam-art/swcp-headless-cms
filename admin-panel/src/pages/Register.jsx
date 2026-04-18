@@ -5,15 +5,26 @@ import * as toast from '../utils/toast'
 
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email?.trim())) {
-    return 'Please enter a valid email address'
+  if (!email?.trim()) return 'Email is required!'
+  if (!emailRegex.test(email.trim())) {
+    return 'Invalid email format. Please enter a valid email.'
   }
   return null
 }
 
 const validatePassword = (password) => {
+  if (!password) return 'Password is required!'
   if (password.length < 6) {
-    return 'Security password must be at least 6 characters'
+    return 'Password must be at least 6 characters long.'
+  }
+  return null
+}
+
+const validateUsername = (name) => {
+  if (!name?.trim()) return 'Name is required!'
+  const nameRegex = /^[a-zA-Z\s]+$/
+  if (!nameRegex.test(name.trim())) {
+    return 'Name can only contain letters and spaces.'
   }
   return null
 }
@@ -50,12 +61,12 @@ const Register = () => {
     try {
       const emailError = validateEmail(formData.email.trim())
       const passwordError = validatePassword(formData.password)
-      const usernameError = !formData.username.trim() ? 'Full Name is required' : null
+      const usernameError = validateUsername(formData.username.trim())
 
       if (emailError || passwordError || usernameError) {
-        usernameError && toast.showError(usernameError)
-        emailError && toast.showError(emailError)
-        passwordError && toast.showError(passwordError)
+        if (usernameError) toast.showError(usernameError)
+        else if (emailError) toast.showError(emailError)
+        else if (passwordError) toast.showError(passwordError)
         setIsLoading(false)
         return
       }
@@ -67,7 +78,10 @@ const Register = () => {
       )
 
       if (response.success) {
-        navigate('/login', { replace: true, state: { successMessage: 'Successfully signed up! Please login.' } })
+        toast.showSuccess('Registration successful! You can now log in.')
+        setTimeout(() => {
+          navigate('/login', { replace: true, state: { successMessage: 'Successfully signed up! Please login.' } })
+        }, 1500)
       }
     } catch (err) {
       console.error('Registration error:', err)

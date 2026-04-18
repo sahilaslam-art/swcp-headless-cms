@@ -61,12 +61,19 @@ const Login = () => {
       const response = await login(formData.email.trim(), formData.password, true)
 
       if (response.success) {
+        toast.showSuccess('Login successful! Redirecting to dashboard...')
         const from = location.state?.from?.pathname || '/'
-        navigate(from, { replace: true })
+        setTimeout(() => {
+          navigate(from, { replace: true })
+        }, 1500)
       }
     } catch (err) {
       console.error('Login error:', err)
-      toast.showError(err.response?.data?.message || err.message || 'An unexpected error occurred.')
+      if (err.response?.status === 401) {
+        toast.showError('Invalid email or password. Please try again.')
+      } else {
+        toast.showError(err.response?.data?.message || err.message || 'Something went wrong. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }

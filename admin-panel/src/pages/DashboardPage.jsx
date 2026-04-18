@@ -15,18 +15,21 @@ export default function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, m, f, a] = await Promise.all([
-          fetchStats(), 
-          fetchMessages(), 
+        const [statsData, messages, feedback, analyticsData] = await Promise.all([
+          fetchStats(),
+          fetchMessages(),
           fetchFeedback(),
-          fetchAnalyticsStats()
+          fetchAnalyticsStats(),
         ]);
-        setStats(s);
-        setRecentMessages(m.slice(0, 4));
-        setRecentFeedback(f.filter((fb) => !fb.approved).slice(0, 3));
-        setAnalytics(a);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
+        setStats(statsData);
+        setRecentMessages(messages.slice(0, 4));
+        setRecentFeedback(feedback.filter((fb) => !fb.approved).slice(0, 3));
+        setAnalytics(analyticsData);
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
     load();
   }, []);

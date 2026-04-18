@@ -5,9 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  },
+  headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 })
 
@@ -15,7 +13,7 @@ let isRefreshing = false
 let failedQueue = []
 
 const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
+  failedQueue.forEach((prom) => {
     if (error) prom.reject(error)
     else prom.resolve(token)
   })
@@ -23,6 +21,7 @@ const processQueue = (error, token = null) => {
   failedQueue = []
 }
 
+// Attach access token to every request
 api.interceptors.request.use(
   (config) => {
     const accessToken = localStorage.getItem('accessToken')
@@ -32,104 +31,77 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+// Handle 401/403 responses — attempt token refresh before failing
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const originalRequest = error.config
+
+    // Do not retry refresh requests to prevent infinite loops
     if (originalRequest?.url?.includes('/auth/refresh')) return Promise.reject(error)
-    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest?._retry) {
+
+    const isAuthError =
+      error.response?.status === 401 || error.response?.status === 403
+
+    if (isAuthError && !originalRequest?._retry) {
       if (isRefreshing) {
-        return new Promise((resolve, reject) => failedQueue.push({ resolve, reject }))
-          .then(token => {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            return api(originalRequest)
-          }).catch(err => Promise.reject(err))
+        // Queue the request until the refresh completes
+        return new Promise((resolve, reject) =>
+          failedQueue.push({ resolve, reject })
+        ).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          return api(originalRequest)
+        })
       }
+
       originalRequest._retry = true
       isRefreshing = true
-      try {
-        return authService.refreshToken().then((token) => {
+
+      return authService
+        .refreshToken()
+        .then((token) => {
           api.defaults.headers.common.Authorization = `Bearer ${token}`
           originalRequest.headers.Authorization = `Bearer ${token}`
           processQueue(null, token)
           return api(originalRequest)
-        }).catch((err) => {
+        })
+        .catch((err) => {
           processQueue(err, null)
           authService.clearStoredTokens()
-          window.location.href = '/login'
+          if (
+            !window.location.pathname.includes('/login') &&
+            !window.location.pathname.includes('/register')
+          ) {
+            window.location.href = '/login'
+          }
           return Promise.reject(err)
         })
-      } catch (err) {
-        processQueue(err, null)
-        return Promise.reject(err)
-      }
     }
+
     return Promise.reject(error)
   }
 )
 
-export default api;
+export default api
 
 // ==================== PROJECTS ====================
-export async function fetchProjects() {
-  const res = await api.get(`/admin/projects`);
-  return res.data;
-}
-
-export async function createProject(data) {
-  const res = await api.post(`/admin/projects`, data);
-  return res.data;
-}
-
-export async function updateProject(id, data) {
-  const res = await api.put(`/admin/projects/${id}`, data);
-  return res.data;
-}
-
-export async function deleteProject(id) {
-  const res = await api.delete(`/admin/projects/${id}`);
-  return res.data;
-}
+export const fetchProjects = () => api.get('/admin/projects').then((r) => r.data)
+export const createProject = (data) => api.post('/admin/projects', data).then((r) => r.data)
+export const updateProject = (id, data) => api.put(`/admin/projects/${id}`, data).then((r) => r.data)
+export const deleteProject = (id) => api.delete(`/admin/projects/${id}`).then((r) => r.data)
 
 // ==================== FEEDBACK ====================
-export async function fetchFeedback() {
-  const res = await api.get(`/admin/feedback`);
-  return res.data;
-}
-
-export async function createFeedback(data) {
-  const res = await api.post(`/admin/feedback`, data);
-  return res.data;
-}
-
-export async function updateFeedback(id, data) {
-  const res = await api.patch(`/admin/feedback/${id}`, data);
-  return res.data;
-}
-
-export async function deleteFeedback(id) {
-  const res = await api.delete(`/admin/feedback/${id}`);
-  return res.data;
-}
+export const fetchFeedback = () => api.get('/admin/feedback').then((r) => r.data)
+export const createFeedback = (data) => api.post('/admin/feedback', data).then((r) => r.data)
+export const updateFeedback = (id, data) => api.patch(`/admin/feedback/${id}`, data).then((r) => r.data)
+export const deleteFeedback = (id) => api.delete(`/admin/feedback/${id}`).then((r) => r.data)
 
 // ==================== MESSAGES ====================
-export async function fetchMessages() {
-  const res = await api.get(`/admin/messages`);
-  return res.data;
-}
-
-export async function deleteMessage(id) {
-  const res = await api.delete(`/admin/messages/${id}`);
-  return res.data;
-}
+export const fetchMessages = () => api.get('/admin/messages').then((r) => r.data)
+export const deleteMessage = (id) => api.delete(`/admin/messages/${id}`).then((r) => r.data)
 
 // ==================== STATS ====================
-export async function fetchStats() {
-  const res = await api.get(`/admin/stats`);
-  return res.data;
-}
+export const fetchStats = () => api.get('/admin/stats').then((r) => r.data)
+
 // ==================== ANALYTICS ====================
-export async function fetchAnalyticsStats() {
-  const res = await api.get(`/analytics/stats`);
-  return res.data;
-}
+export const fetchAnalyticsStats = () => api.get('/analytics/stats').then((r) => r.data)
