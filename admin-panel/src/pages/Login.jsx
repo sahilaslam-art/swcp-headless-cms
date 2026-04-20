@@ -87,7 +87,7 @@ const Login = () => {
             ADMIN PANEL
         </div>
         <div className="hidden md:block text-[10px] font-label uppercase tracking-[0.2em] opacity-40">
-            Secure Entry Protocol v.2.4
+            Secure Entry Protocol v.2.6
         </div>
       </header>
 
@@ -111,7 +111,7 @@ const Login = () => {
                 <span className="text-[10px] uppercase tracking-widest font-bold opacity-60">Secure and private</span>
               </div>
               <p className="font-label text-[10px] uppercase tracking-[0.15em] text-[#8B8680]">
-                  Established 2024 — High Precision Systems
+                  Established 2026 — High Precision Systems
               </p>
             </div>
           </div>
@@ -220,7 +220,7 @@ const Login = () => {
         <div className="flex flex-col gap-2 items-center md:items-start">
           <div className="text-sm font-black text-[#dee5ff] uppercase tracking-tighter">ADMIN PANEL</div>
           <div className="font-['Inter'] text-[10px] uppercase tracking-[0.1em] opacity-40 text-[#b7c8e1]">
-              © 2024 ADMIN PANEL. TRUSTED BY 12,000+ TEAMS.
+              © 2026 ADMIN PANEL.
           </div>
         </div>
         <div className="flex gap-8 items-center font-label text-[10px] tracking-widest uppercase">

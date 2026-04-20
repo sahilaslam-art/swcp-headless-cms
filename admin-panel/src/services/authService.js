@@ -32,6 +32,13 @@ export const register = async (email, username, password) => {
   try {
     const response = await api.post('/auth/register', { email, username, password })
     if (response.data.success) {
+      // Save tokens so the session is established immediately
+      if (response.data.accessToken) {
+        localStorage.setItem('accessToken', response.data.accessToken)
+      }
+      if (response.data.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.refreshToken)
+      }
       return response.data.data
     }
     throw new Error(response.data.message || 'Registration failed')

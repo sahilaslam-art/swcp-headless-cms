@@ -40,6 +40,7 @@ const Register = () => {
     password: '',
   })
 
+  // Re-enabled auto-redirect for authenticated users
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true })
@@ -78,9 +79,9 @@ const Register = () => {
       )
 
       if (response.success) {
-        toast.showSuccess('Registration successful! You can now log in.')
+        toast.showSuccess('Registration successful! Redirecting to workspace...')
         setTimeout(() => {
-          navigate('/login', { replace: true, state: { successMessage: 'Successfully signed up! Please login.' } })
+          navigate('/', { replace: true })
         }, 1500)
       }
     } catch (err) {
@@ -99,7 +100,7 @@ const Register = () => {
             ADMIN PANEL
         </div>
         <div className="hidden md:block text-[10px] font-label uppercase tracking-[0.2em] opacity-40">
-            Secure Entry Protocol v.2.4
+            Secure Entry Protocol v.2.6
         </div>
       </header>
 
@@ -123,7 +124,7 @@ const Register = () => {
                 <span className="text-[10px] uppercase tracking-widest font-bold opacity-60">Secure and private</span>
               </div>
               <p className="font-label text-[10px] uppercase tracking-[0.15em] text-[#8B8680]">
-                  Established 2024 — High Precision Systems
+                  Established 2026 — High Precision Systems
               </p>
             </div>
           </div>
@@ -261,7 +262,7 @@ const Register = () => {
         <div className="flex flex-col gap-2 items-center md:items-start text-center md:text-left text-[#3D3A34]">
           <div className="text-sm font-black uppercase tracking-tighter">ADMIN PANEL</div>
           <div className="font-['Inter'] text-[10px] uppercase tracking-[0.1em] opacity-40">
-              © 2024 ADMIN PANEL. TRUSTED BY 12,000+ TEAMS.
+              © 2026 ADMIN PANEL.
           </div>
         </div>
         <div className="flex gap-8 items-center font-label text-[10px] tracking-widest uppercase">

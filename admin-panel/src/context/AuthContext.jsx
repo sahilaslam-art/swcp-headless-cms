@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (email, username, password) => {
     try {
       const userData = await authService.register(email, username, password)
+      // Call setUser to automatically log the user in after registration
       setUser(userData)
       return { success: true, data: userData }
     } catch (error) {
